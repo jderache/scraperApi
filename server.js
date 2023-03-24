@@ -11,15 +11,9 @@ let agendaWeekend = [];
 
 app.use(express.json());
 
-function getRootUrl() {
-  const port = process.env.PORT || 8000;
-  const dev = process.env.NODE_ENV !== "production";
-  const ROOT_URL = dev
-    ? `http://localhost:${port}`
-    : "https://api.julienderache.fr";
-
-  return ROOT_URL;
-}
+// Définir le port et l'URL de base
+const PORT = process.env.PORT || 8000;
+const ROOT_URL = process.env.ROOT_URL || `http://localhost:${PORT}`;
 
 // Définir la tâche cron pour exécuter la fonction toutes les 3 heures
 // cron.schedule("0 */3 * * *", async () => {
@@ -50,7 +44,7 @@ cron.schedule("* * * * *", async () => {
     await browser.close();
 
     // Envoyer les données extraites à l'API
-    await axios.post(`${getRootUrl()}/api`, agendaWeekend);
+    await axios.post(`${ROOT_URL}:${PORT}/api`, agendaWeekend);
 
     const now = new Date();
     console.log(
@@ -71,7 +65,9 @@ app.post("/api", (req, res) => {
 });
 
 app.listen(process.env.PORT || 8000, () => {
-  console.log(`Le serveur est en cours d'exécution sur le port.`);
+  console.log(
+    `Le serveur est en cours d'exécution sur ${ROOT_URL} et sur le port ${PORT}.`
+  );
 });
 
 export default app;
