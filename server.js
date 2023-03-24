@@ -3,11 +3,23 @@ import axios from "axios";
 import puppeteer from "puppeteer";
 import cheerio from "cheerio";
 import cron from "node-cron";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 let agendaWeekend = [];
 
 app.use(express.json());
+
+function getRootUrl() {
+  const port = process.env.PORT || 8000;
+  const dev = process.env.NODE_ENV !== "production";
+  const ROOT_URL = dev
+    ? `http://localhost:${port}`
+    : "https://api.julienderache.fr";
+
+  return ROOT_URL;
+}
 
 // Définir la tâche cron pour exécuter la fonction toutes les 3 heures
 // cron.schedule("0 */3 * * *", async () => {
@@ -38,7 +50,7 @@ cron.schedule("* * * * *", async () => {
     await browser.close();
 
     // Envoyer les données extraites à l'API
-    await axios.post("http://localhost:3000/api", agendaWeekend);
+    await axios.post(`${getRootUrl()}/api`, agendaWeekend);
 
     const now = new Date();
     console.log(
@@ -58,7 +70,7 @@ app.post("/api", (req, res) => {
   res.status(201).send("Données ajoutées avec succès.");
 });
 
-app.listen(process.env.PORT || 3000, () => {
+app.listen(process.env.PORT || 8000, () => {
   console.log(`Le serveur est en cours d'exécution sur le port.`);
 });
 
