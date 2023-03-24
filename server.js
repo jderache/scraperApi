@@ -1,10 +1,8 @@
-import express from "express";
-import axios from "axios";
-import puppeteer from "puppeteer";
-import cheerio from "cheerio";
-import cron from "node-cron";
-import dotenv from "dotenv";
-dotenv.config();
+const Nightmare = require("nightmare");
+const express = require("express");
+const cron = require("node-cron");
+const axios = require("axios");
+require("dotenv").config();
 
 const app = express();
 let agendaWeekend = [];
@@ -19,29 +17,20 @@ const ROOT_URL = process.env.ROOT_URL || `http://localhost:${PORT}`;
 // cron.schedule("0 */3 * * *", async () => {
 cron.schedule("* * * * *", async () => {
   try {
-    // Lancer une instance de Puppeteer
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
-    // Naviguer vers la page web
-    await page.goto(
+    const nightmare = Nightmare({ show: false });
+    await nightmare.goto(
       "https://escaut.fff.fr/recherche-clubs?scl=7178&tab=resultats&subtab=agenda"
     );
 
-    // Récupérer le contenu de la page avec Axios
-    const html = await page.content();
-
-    // Charger le contenu avec Cheerio
-    const $ = cheerio.load(html);
-
-    // Utiliser Cheerio pour extraire les données
-    agendaWeekend = [];
-    $("div.detail").each((i, element) => {
-      agendaWeekend.push($(element).html());
+    // Utiliser des sélecteurs CSS pour extraire les données
+    agendaWeekend = await nightmare.evaluate(() => {
+      const matches = Array.from(document.querySelectorAll("div.detail")).map(
+        (element) => element.innerHTML
+      );
+      return matches;
     });
 
-    // Fermer l'instance de Puppeteer
-    await browser.close();
+    await nightmare.end();
 
     // Envoyer les données extraites à l'API
     await axios.post(`${ROOT_URL}:${PORT}/api`, agendaWeekend);
@@ -69,5 +58,3 @@ app.listen(process.env.PORT || 8000, () => {
     `Le serveur est en cours d'exécution sur ${ROOT_URL} et sur le port ${PORT}.`
   );
 });
-
-export default app;
